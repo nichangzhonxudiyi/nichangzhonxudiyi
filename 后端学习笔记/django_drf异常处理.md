@@ -34,12 +34,16 @@ def exception_handler(exc, context):
 
     return None
 ```
+
 &emsp;&emsp;其中的两个参数exc与context，分别表示本次请求发生的异常信息，与本次请求发送异常的执行上下文[本次请求的request对象，异常发送的时间，行号等...]，
+
 ```
 isinstance(exc, Http404)
 ```
 &emsp;&emsp;isinstance()方法用来判断exc是否与Http404是同一个实例，实际上这一串的代码是用来判断实例的类型PermissionDenied是表示文件权限被拒绝。
+
 &emsp;&emsp;然后接下来再对exc判断其是否为api方面的报错信息，用一个headers的字典来收集错误属性，getattr()方法来返回exc的对象属性。
+
 ```
 if getattr(exc, 'auth_header', None):
     headers['WWW-Authenticate'] = exc.auth_header
@@ -49,12 +53,13 @@ if getattr(exc, 'auth_header', None):
 if getattr(exc, 'wait', None):
     headers['Retry-After'] = '%d' % exc.wait
 ```
+
 &emsp;&emsp;'wait'则是表示等待的时间，如果是超时也会对其进行记录，最后用isinstance判断exc.detail是否是列表或是字典，如果不是，则创建一个字典用来存值，最后将保存的date和headers作为参数传给Pesponse()做一个返回。
 
 &emsp;&emsp;set_rollback()是django的transaction模块的函数，用于设置事务的手动提交与回滚状态，因为save()方法并不支持复杂的数据保存。
 
-
 &emsp;&emsp;但exception_handler()方法只判断了两种错误，如果是数据库方面的错误就会直接跳过，所以我们需要在自定义一个有关数据库的错误，具体代码代码如下：
+
 ```
 def custom_exception_handler(exc, context):
     # 调用drf框架原生的异常处理方法
